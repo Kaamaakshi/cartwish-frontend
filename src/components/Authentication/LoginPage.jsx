@@ -1,9 +1,42 @@
-import React, { useState } from "react";
 import { useForm } from "react-hook-form";
+import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
 import "./LoginPage.css";
+import { getUser, login } from "../../services/userService";
+import { useState } from "react";
+import { Navigate, useLocation } from "react-router-dom";
+
+const schema = z.object({
+  email: z.string().email({ message: "Please enter valid email address" }),
+  password: z
+    .string()
+    .min(8, { message: "password must contain atleast 8 characters" }),
+});
+
 const LoginPage = () => {
-  const { register, handleSubmit } = useForm();
-  const onSubmit = (formData) => console.log(formData);
+  const [formError, setFormError] = useState("");
+  const location = useLocation();
+
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm({ resolver: zodResolver(schema) });
+  const onSubmit = async (formData) => {
+    try {
+      await login(formData);
+      const { state } = location;
+      window.location = state ? state.form : "/";
+    } catch (err) {
+      if (err.response && err.response.status === 400) {
+        setFormError(err.response.data.message);
+      }
+    }
+  };
+
+  if (getUser()) {
+    return <Navigate to="/" />;
+  }
   return (
     <section className="align_center form_page">
       <form
@@ -14,25 +47,32 @@ const LoginPage = () => {
         <h2>Login Form</h2>
         <div className="form_inputs">
           <div>
-            <label htmlFor="name">Name</label>
+            <label htmlFor="email">Email</label>
             <input
-              type="text"
-              id="name"
+              type="email"
+              id="email"
               className="form_text_input"
-              placeholder="Enter Your Name"
-              {...register("name", { required: true, minLength: 3 })}
+              placeholder="Enter Your email"
+              {...register("email")}
             />
+            {errors.email && (
+              <em className="form_errors">{errors.email.message}</em>
+            )}
           </div>
           <div>
-            <label htmlFor="phone">Phone Number</label>
+            <label htmlFor="password">Password</label>
             <input
-              type="number"
-              id="phone"
+              type="password"
+              id="password"
               className="form_text_input"
-              placeholder="Enter Your Phone Number"
-              {...register("phone", { valueAsNumber: true })}
+              placeholder="Enter Your Password"
+              {...register("password")}
             />
+            {errors.password && (
+              <em className="form_errors">{errors.password.message}</em>
+            )}
           </div>
+          {formError && <em className="form_error">{formError}</em>}
           <button type="submit" className="search_button form_submit">
             Submit
           </button>
