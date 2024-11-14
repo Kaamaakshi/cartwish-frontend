@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { ToastContainer, toast } from "react-toastify";
 
 import userContext from "./context/userContext";
@@ -34,27 +34,30 @@ const App = () => {
     } catch (error) {}
   }, []);
 
-  const addToCart = (product, quantity) => {
-    const updatedCart = [...cart];
-    const productIndex = updatedCart.findIndex(
-      (item) => item.product._id === product._id
-    );
-    if (productIndex === -1) {
-      updatedCart.push({ product: product, quantity: quantity });
-    } else {
-      updatedCart[productIndex].quantity += quantity;
-    }
-    setCart(updatedCart);
+  const addToCart = useCallback(
+    (product, quantity) => {
+      const updatedCart = [...cart];
+      const productIndex = updatedCart.findIndex(
+        (item) => item.product._id === product._id
+      );
+      if (productIndex === -1) {
+        updatedCart.push({ product: product, quantity: quantity });
+      } else {
+        updatedCart[productIndex].quantity += quantity;
+      }
+      setCart(updatedCart);
 
-    addToCartAPI(product._id, quantity)
-      .then((res) => {
-        toast.success("Product Added Successfully!");
-      })
-      .catch((err) => {
-        toast.error("Failed to Add Product");
-        setCart(cart);
-      });
-  };
+      addToCartAPI(product._id, quantity)
+        .then((res) => {
+          toast.success("Product Added Successfully!");
+        })
+        .catch((err) => {
+          toast.error("Failed to Add Product");
+          setCart(cart);
+        });
+    },
+    [cart]
+  );
 
   const removeFromCart = (id) => {
     const oldCart = [...cart];
